@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snake Game</title>
+    <style type="text/css">
+        #game-board {
+            width: 500px;
+            height: 500px;
+            background-color: #f7f6f6;
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+
+        .square {
+            width: 20px;
+            height: 20px;
+            /*background-color: white;*/
+            border: 1px solid black;
+        }
+
+        #game-over {
+            display: none;
+            width: 500px;
+            height: 500px;
+            background-color: #f7f6f6;
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+            text-align: center;
+            padding-top: 200px;
+        }
+
+        #restart-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+<canvas id="game-board"></canvas>
+<div id="game-over" style="display: none;">
+    <h2>Game Over!</h2>
+    <button id="restart-button">Chơi lại</button>
+</div>
+
+<script type="text/javascript">
+    const canvas = document.getElementById('game-board');
+    const ctx = canvas.getContext('2d');
+    const squareSize = 10;
+    let food = [];
+    let snake = [];
+    let direction = 'right';
+
+
+    function drawSquare(coords, color) {
+        const [x, y] = coords;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * squareSize, y * squareSize, squareSize, squareSize);
+    }
+
+    function createSnake() {
+        const headX = Math.floor(Math.random() * (canvas.width / squareSize));
+        const headY = Math.floor(Math.random() * (canvas.height / squareSize));
+        const head = [headX, headY];
+
+        snake.push(head);
+
+        drawSquare(head, 'green');
+    }
+
+    function createFood() {
+
+        // Generate a random position for the food
+        let foodX, foodY;
+        do {
+            foodX = Math.floor(Math.random() * (canvas.width / squareSize));
+            foodY = Math.floor(Math.random() * (canvas.height / squareSize));
+        } while (snake.some(segment => segment[0] === foodX && segment[1] === foodY));
+
+        // Draw the food on the screen
+        drawSquare([foodX, foodY], 'red');
+
+        // Return the coordinates of the new food
+        return [foodX, foodY];
+
+
+    }
+
+    function moveSnake() {
+        const head = snake[0];
+        let [x, y] = head;
+
+        switch (direction) {
+            case 'up':
+                y--;
+                break;
+            case 'down':
+                y++;
+                break;
+            case 'left':
+                x--;
+                break;
+            case 'right':
+                x++;
+                break;
+        }
+
+        // Nếu rắn chạm cạnh, điều chỉnh vị trí của đầu rắn
+        if (x < 0) {
+            x = canvas.width / squareSize - 1;
+        } else if (x >= canvas.width / squareSize) {
+            x = 0;
+        } else if (y < 0) {
+            y = canvas.height / squareSize - 1;
+        } else if (y >= canvas.height / squareSize) {
+            y = 0;
+        }
+
+
+        // Nếu đầu rắn đi qua ô vuông mồi, ta sẽ thêm một ô vuông vào đuôi rắn và tạo lại đối tượng mồi tại một vị trí mới
+        if (x === food[0] && y === food[1]) {
+            snake.push(snake[snake.length - 1]);
+            food = createFood();
+        }
+
+        const newHead = [x, y];
+        snake.unshift(newHead);
+        const tail = snake.pop();
+        drawSquare(tail, '#f7f6f6');
+        drawSquare(newHead, 'green');
+
+        // Kiểm tra xem rắn có đâm vào đuôi của mình không
+        for (let i = 1; i < snake.length; i++) {
+            if (snake[i][0] === x && snake[i][1] === y) {
+                clearInterval(gameLoop);
+                canvas.style.display = 'none';
+                const endGameDiv = document.getElementById('game-over');
+                endGameDiv.style.display = 'block';
+                return;
+            }
+        }
+    }
+
+    function changeDirection(event) {
+        const keyCode = event.keyCode;
+
+        switch (keyCode) {
+            case 37:
+                direction = 'left';
+                break;
+            case 38:
+                direction = 'up';
+                break;
+            case 39:
+                direction = 'right';
+                break;
+            case 40:
+                direction = 'down';
+                break;
+        }
+    }
+
+    // Viết hàm restartGame để xóa phần tử div và hiển thị lại canvas:
+    function restartGame() {
+        gameOverDiv.style.display = 'none';
+        canvas.style.display = 'block';
+
+        // Xóa hết các ô vuông hiện tại trên canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        snake = [];
+        food = [];
+        direction = 'right';
+        createSnake();
+        food = createFood();
+        gameLoop = setInterval(moveSnake, 100);
+    }
+
+    createSnake();
+    food = createFood();
+    document.addEventListener('keydown', changeDirection);
+    let gameLoop;
+    gameLoop = setInterval(moveSnake, 100);
+
+    // Reset game
+    const gameOverDiv = document.getElementById('game-over');
+
+    // Thêm sự kiện click cho nút chơi lại:
+    const restartButton = document.getElementById('restart-button');
+    restartButton.addEventListener('click', restartGame);
+
+</script>
+</body>
+</html>
